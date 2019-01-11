@@ -1,0 +1,14 @@
+[package]
+name = "koce"
+version = "0.1.0"
+authors = ["iamGreedy <egoavara@gmail.com>"]
+
+[dependencies]
+regex = "1"
+lazy_static = "*"
+nom = "^4.1"
+custom_derive = "^0.1.7"
+enum_derive = "^0.1.7"
+hex = "^0.3.2"
+
+num = "*"
