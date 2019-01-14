@@ -13,11 +13,11 @@ use expr::word;
 
 fn main() {
 
-    match expr::syntax::splitBlock(CompleteStr("var a = 1
+    match expr::syntax::If (CompleteStr("if a == 1 {
+    if b == 2{
 
-
-    b = 2
-")) {
+    }
+}")) {
         Ok((remain, value)) => {
             println!("remain : '{}', value : {:?}", remain, value);
         }

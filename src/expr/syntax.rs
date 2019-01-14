@@ -5,7 +5,6 @@ use std::string::String;
 pub enum Word{
     Call(Box<Word>, Vec<Word>),
     Cast(Box<Word>, Box<Word>),
-    // TODO Struct(Box<Word>, Vec<Word>),
     //
     Pos(Box<Word>),
     Neg(Box<Word>),
@@ -53,18 +52,28 @@ pub enum Expr {
     // Return(Word)
     // Return := 'return' <Word>
     Return(Word),
-    // Fn(LocalVariable, Vec<(LocalVariable, Type)>, <Type>, <Expr>)
-    // Fn := 'fn' <LocalVariable> '(' (<Type> | <LocalVariable> : <Type>) ( ',' <Type> | <LocalVariable> : <Type>)* ')' ('->' <Type>)? <Expr>
-    Fn(Word, Vec<(Word, Word)>, Option<Word>, Box<Expr>),
     // Block(Vec<Expr>)
     // Block := '{' sep(<Expr>, ';' | '\n' ) '}'
     Block(Vec<Expr>),
+    // If(<Condition>, <Do>, <Next>)
+    // If := 'if' <Condition> <Do> <Next>
+    If(Word, Box<Expr>, Option<Box<Expr>>),
+    // ElseIf(<Condition>, <Do>, <Next>)
+    // ElseIf := 'else' 'if' <Condition> <Do> <Next>
+    ElseIf(Word, Box<Expr>, Option<Box<Expr>>),
+    // Else(<Do>)
+    // Else := 'else' <Do>
+    Else(Box<Expr>),
+
+    // Fn(LocalVariable, Vec<(LocalVariable, Type)>, <Type>, <Expr>)
+    // Fn := 'fn' <LocalVariable> '(' (<Type> | <LocalVariable> : <Type>) ( ',' <Type> | <LocalVariable> : <Type>)* ')' ('->' <Type>)? <Expr>
+    Fn(Word, Vec<(Word, Word)>, Option<Word>, Box<Expr>),
 }
 
 
 use word::{LocalVariable, Variable, Type, Word};
 use nom::types::CompleteStr;
-use nom::{multispace1};
+use nom::{multispace0, multispace1};
 use nom::{InputTakeAtPosition, IResult, AsChar, ErrorKind};
 
 pub fn ms0<T>(input: T) -> IResult<T, T>
@@ -144,23 +153,71 @@ named!(pub Return<CompleteStr, Expr>,
     )
 );
 
-named!(pub SingleExor<CompleteStr, Expr>, alt!(
-    Import | Var | Const | Assign | Return
+named!(pub SingleExpr<CompleteStr, Expr>, alt!(
+    Import | Var | Const | Assign | Return | If
 ));
 
-named!(pub wrapBlock<CompleteStr, CompleteStr>,
-    delimited!(
-        tag!("{"),
-        is_not!("}"),
-        tag!("}")
+named!(pub Block<CompleteStr, Expr>,
+    do_parse!(
+        v : delimited!(
+            do_parse!(tag!("{") >> multispace0 >> ()),
+            splitBlock,
+            tag!("}")
+        ) >>
+        (Expr::Block(v))
     )
 );
 //named!(pub splitSingleBlock<CompleteStr, Expr>,
 //    SingleExor
 //);
 
-named!(pub splitBlock<CompleteStr, Vec<Expr>>,
-    many1!(
-        terminated!(SingleExor, opt!(multispace1))
+named!(splitBlock<CompleteStr, Vec<Expr>>,
+    many0!(
+        terminated!(SingleExpr, multispace0)
+    )
+);
+
+named!(pub If<CompleteStr, Expr>,
+    do_parse!(
+        tag!("if") >>
+        ms1 >>
+        cond : Word >>
+        ms0 >>
+        dobl : alt!(SingleExpr| Block) >>
+        ms0 >>
+        next : opt!(alt!(ElseIf | Else)) >>
+        (Expr::If(cond, Box::new(dobl), {
+            match next {
+                Some(some) => Some(Box::new(some)),
+                None => None,
+            }
+        }))
+    )
+);
+named!(ElseIf<CompleteStr, Expr>,
+    do_parse!(
+        tag!("else") >>
+        ms1 >>
+        tag!("if") >>
+        ms1 >>
+        cond : Word >>
+        ms0 >>
+        dobl : alt!(SingleExpr| Block) >>
+        ms0 >>
+        next : opt!(alt!(ElseIf | Else)) >>
+        (Expr::ElseIf(cond, Box::new(dobl), {
+            match next {
+                Some(some) => Some(Box::new(some)),
+                None => None,
+            }
+        }))
+    )
+);
+named!(Else<CompleteStr, Expr>,
+    do_parse!(
+        tag!("else") >>
+        ms1 >>
+        dobl : alt!(SingleExpr| Block) >>
+        (Expr::Else(Box::new(dobl)))
     )
 );
