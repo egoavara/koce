@@ -1,16 +1,16 @@
-use super::super::syntax::Word;
+use super::super::syntax::Token;
 use super::*;
 
 use nom::{multispace0};
 use nom::types::CompleteStr;
 
-named!(pub call<CompleteStr, Word>,
+named!(pub call<CompleteStr, Token>,
     map_res!(do_parse!(
         cmd : value >>
         args : tuple >>
         ({
-            if let Word::Tuple(data) = args{
-                Ok(Word::Call(
+            if let Token::Tuple(data) = args{
+                Ok(Token::Call(
                     Box::new(cmd),
                     data,
                 ))
@@ -20,13 +20,13 @@ named!(pub call<CompleteStr, Word>,
         })
     ), |x|x)
 );
-named!(pub cast<CompleteStr, Word>,
+named!(pub cast<CompleteStr, Token>,
     map_res!(do_parse!(
         cmd : value >>
         args : tuple >>
         ({
-            if let Word::Tuple(data) = args{
-                Ok(Word::Call(
+            if let Token::Tuple(data) = args{
+                Ok(Token::Call(
                     Box::new(cmd),
                     data,
                 ))
@@ -36,13 +36,3 @@ named!(pub cast<CompleteStr, Word>,
         })
     ), |x|x)
 );
-//named!(pub cast<CompleteStr, Word>,
-//    do_parse!(
-//        w0 : alt!(single) >>
-//        multispace0 >>
-//        op : tag!("as") >>
-//        multispace0 >>
-//        w1 : typeref >>
-//        (Word::Cast(Box::new(w0), Box::new(w1)))
-//    ),
-//);

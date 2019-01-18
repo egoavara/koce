@@ -1,38 +1,38 @@
-use super::super::syntax::Word;
+use super::super::syntax::Token;
 use super::super::util::{naming as u_naming, integer as u_integer, float as u_float, literal as u_literal};
 use super::*;
 
 use nom::{multispace0};
 use nom::types::CompleteStr;
 
-named!(pub reference<CompleteStr, Word>,
+named!(pub reference<CompleteStr, Token>,
     do_parse!(
         root : u_naming >>
         next : opt!(reference_next) >>
-        (Word::Reference(root.0.to_string(), match next{Some(data) => Some(Box::new(data)), None => None,}))
+        (Token::Reference(root.0.to_string(), match next{Some(data) => Some(Box::new(data)), None => None,}))
     )
 );
-named!(pub typeref<CompleteStr, Word>,
+named!(pub typeref<CompleteStr, Token>,
     do_parse!(
         root : u_naming >>
         next : opt!(reference_name) >>
-        (Word::Reference(root.0.to_string(), match next{Some(data) => Some(Box::new(data)), None => None,}))
+        (Token::Reference(root.0.to_string(), match next{Some(data) => Some(Box::new(data)), None => None,}))
     )
 );
 
-named!(reference_next<CompleteStr, Word>,
+named!(reference_next<CompleteStr, Token>,
     alt!(reference_index | reference_name)
 );
 
-named!(reference_name<CompleteStr, Word>,
+named!(reference_name<CompleteStr, Token>,
     do_parse!(
         tag!(".") >>
         name : u_naming >>
         next : opt!(reference_next) >>
-        (Word::Reference(name.0.to_string(), match next{Some(data) => Some(Box::new(data)), None => None,}))
+        (Token::Reference(name.0.to_string(), match next{Some(data) => Some(Box::new(data)), None => None,}))
     )
 );
-named!(reference_index<CompleteStr, Word>,
+named!(reference_index<CompleteStr, Token>,
     do_parse!(
         index : delimited!(
             tag!("["),
@@ -40,51 +40,51 @@ named!(reference_index<CompleteStr, Word>,
             tag!("]")
         ) >>
         next : opt!(reference_next) >>
-        (Word::Index(Box::new(index), match next{Some(data) => Some(Box::new(data)), None => None,}))
+        (Token::Index(Box::new(index), match next{Some(data) => Some(Box::new(data)), None => None,}))
     )
 );
 
-named!(pub integer<CompleteStr, Word>,
+named!(pub integer<CompleteStr, Token>,
     do_parse!(
         i : u_integer >>
-        (Word::Integer(i))
+        (Token::Integer(i))
     )
 );
-named!(pub float<CompleteStr, Word>,
+named!(pub float<CompleteStr, Token>,
     do_parse!(
         f : u_float >>
-        (Word::Float(f))
+        (Token::Float(f))
     )
 );
-named!(pub numaric<CompleteStr, Word>,
+named!(pub numaric<CompleteStr, Token>,
     alt!(float | integer)
 );
-named!(pub literal<CompleteStr, Word>,
+named!(pub literal<CompleteStr, Token>,
     do_parse!(
         s : u_literal >>
-        (Word::Literal(s))
+        (Token::Literal(s))
     )
 );
-named!(pub tuple<CompleteStr, Word>,
+named!(pub tuple<CompleteStr, Token>,
     do_parse!(
         v : delimited!(
             tag!("("),
             separated_list!(tag!(","), ws!(binary)),
             tag!(")")
         ) >>
-        (Word::Tuple(v))
+        (Token::Tuple(v))
     )
 );
-named!(pub array<CompleteStr, Word>,
+named!(pub array<CompleteStr, Token>,
     do_parse!(
         v : delimited!(
             tag!("["),
             separated_list!(tag!(","), ws!(binary)),
             tag!("]")
         ) >>
-        (Word::Array(v))
+        (Token::Array(v))
     )
 );
-named!(pub value<CompleteStr, Word>,
+named!(pub value<CompleteStr, Token>,
     alt!(tuple | array | numaric | literal | reference)
 );

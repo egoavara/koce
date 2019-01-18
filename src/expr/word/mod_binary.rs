@@ -1,4 +1,4 @@
-use super::super::syntax::Word;
+use super::super::syntax::Token;
 use super::*;
 
 use nom::{multispace0};
@@ -6,32 +6,32 @@ use nom::types::CompleteStr;
 
 
 //
-named!(pub single<CompleteStr, Word>,
+named!(pub single<CompleteStr, Token>,
     alt!(call | unary | value)
 );
 
-fn fold_word(a : Word, v : Vec<(String, Word)>) -> Word{
+fn fold_word(a : Token, v : Vec<(String, Token)>) -> Token {
     v.into_iter().fold(a, |r, x|{
         match x.0.as_ref() {
-            "+" => Word::Add(Box::new(r), Box::new(x.1)),
-            "-" => Word::Sub(Box::new(r), Box::new(x.1)),
-            "*" => Word::Mul(Box::new(r), Box::new(x.1)),
-            "/" => Word::Div(Box::new(r), Box::new(x.1)),
-            "%" => Word::Mod(Box::new(r), Box::new(x.1)),
-            "<<" => Word::LShift(Box::new(r), Box::new(x.1)),
-            ">>" => Word::RShift(Box::new(r), Box::new(x.1)),
-            "<=" => Word::LesserEqual(Box::new(r), Box::new(x.1)),
-            ">=" => Word::GreaterEqual(Box::new(r), Box::new(x.1)),
-            "<" => Word::Lesser(Box::new(r), Box::new(x.1)),
-            ">" => Word::Greater(Box::new(r), Box::new(x.1)),
-            "==" => Word::Equal(Box::new(r), Box::new(x.1)),
-            "!=" => Word::NotEqual(Box::new(r), Box::new(x.1)),
-            _ => Word::Add(Box::new(r), Box::new(x.1)),
+            "+" => Token::Add(Box::new(r), Box::new(x.1)),
+            "-" => Token::Sub(Box::new(r), Box::new(x.1)),
+            "*" => Token::Mul(Box::new(r), Box::new(x.1)),
+            "/" => Token::Div(Box::new(r), Box::new(x.1)),
+            "%" => Token::Mod(Box::new(r), Box::new(x.1)),
+            "<<" => Token::LShift(Box::new(r), Box::new(x.1)),
+            ">>" => Token::RShift(Box::new(r), Box::new(x.1)),
+            "<=" => Token::LesserEqual(Box::new(r), Box::new(x.1)),
+            ">=" => Token::GreaterEqual(Box::new(r), Box::new(x.1)),
+            "<" => Token::Lesser(Box::new(r), Box::new(x.1)),
+            ">" => Token::Greater(Box::new(r), Box::new(x.1)),
+            "==" => Token::Equal(Box::new(r), Box::new(x.1)),
+            "!=" => Token::NotEqual(Box::new(r), Box::new(x.1)),
+            _ => Token::Add(Box::new(r), Box::new(x.1)),
         }
     })
 }
 
-named!(binary_0<CompleteStr, Word>,
+named!(binary_0<CompleteStr, Token>,
     do_parse!(
         a : single >>
         multispace0 >>
@@ -48,7 +48,7 @@ named!(binary_0<CompleteStr, Word>,
         (fold_word(a,v))
     )
 );
-named!(binary_1<CompleteStr, Word>,
+named!(binary_1<CompleteStr, Token>,
     do_parse!(
         a : binary_0 >>
         multispace0 >>
@@ -64,7 +64,7 @@ named!(binary_1<CompleteStr, Word>,
         (fold_word(a,v))
     )
 );
-named!(binary_2<CompleteStr, Word>,
+named!(binary_2<CompleteStr, Token>,
     do_parse!(
         a : binary_1 >>
         multispace0 >>
@@ -80,7 +80,7 @@ named!(binary_2<CompleteStr, Word>,
         (fold_word(a,v))
     )
 );
-named!(binary_3<CompleteStr, Word>,
+named!(binary_3<CompleteStr, Token>,
     do_parse!(
         a : binary_2 >>
         multispace0 >>
@@ -98,7 +98,7 @@ named!(binary_3<CompleteStr, Word>,
         (fold_word(a,v))
     )
 );
-named!(binary_4<CompleteStr, Word>,
+named!(binary_4<CompleteStr, Token>,
     do_parse!(
         a : binary_3 >>
         multispace0 >>
@@ -114,7 +114,7 @@ named!(binary_4<CompleteStr, Word>,
         (fold_word(a,v))
     )
 );
-named!(binary_5<CompleteStr, Word>,
+named!(binary_5<CompleteStr, Token>,
     do_parse!(
         a : binary_4 >>
         multispace0 >>
@@ -129,7 +129,7 @@ named!(binary_5<CompleteStr, Word>,
         (fold_word(a,v))
     )
 );
-named!(binary_6<CompleteStr, Word>,
+named!(binary_6<CompleteStr, Token>,
     do_parse!(
         a : binary_5 >>
         multispace0 >>
@@ -144,7 +144,7 @@ named!(binary_6<CompleteStr, Word>,
         (fold_word(a,v))
     )
 );
-named!(binary_7<CompleteStr, Word>,
+named!(binary_7<CompleteStr, Token>,
     do_parse!(
         a : binary_6 >>
         multispace0 >>
@@ -160,4 +160,4 @@ named!(binary_7<CompleteStr, Word>,
     )
 );
 
-named!(pub binary<CompleteStr, Word>, call!(binary_7));
+named!(pub binary<CompleteStr, Token>, call!(binary_7));

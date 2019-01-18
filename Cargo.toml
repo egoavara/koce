@@ -10,5 +10,5 @@ nom = "^4.1"
 custom_derive = "^0.1.7"
 enum_derive = "^0.1.7"
 hex = "^0.3.2"
-
+llvm-sys = "70"
 num = "*"
