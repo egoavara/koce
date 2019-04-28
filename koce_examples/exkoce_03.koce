@@ -1,0 +1,44 @@
+lib std
+lib format
+
+struct Foo{
+    const Class     : str = "Foo"
+    share Share     : str = "Share"
+    var Name        : str
+    var Age         : i32 = 22
+    var Height      : f32 = 165.5
+
+    fn New(const Name : str) : Foo = {
+        return Foo{
+            .Name = Name
+        }
+    }
+    fn Aging(const diff : i32 ) = {
+        .Age += diff
+    }
+    impl format.Formater = {
+        fn ToFormat() : str = {
+            return format("Foo(Name : $0, Age : $1, Height : $2)", .Name, .Age, .Height)
+        }
+    }
+}
+
+define Foo{
+    fn Growing(const diff : f32) = {
+        .Height += diff
+    }
+}
+
+fn main(){
+    // Foo.Aging(1) [ #0001 ] Foo.Aging use definition(method type functionn) 
+    std.print(Foo.Class) // >>Foo
+    std.print(Foo.Share) // >>Share
+    Foo.Share = "Hello?"
+    std.print(Foo.Share) // >>Hello?
+    var f = Foo.New("EGOAVARA")
+    std.print(f)
+    f.Aging(2)
+    std.print(f)
+    f.Growing(10)
+    std.print(f)
+}

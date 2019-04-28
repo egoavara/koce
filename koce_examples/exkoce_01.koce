@@ -1,0 +1,8 @@
+// < library >
+// < function call >
+// < function define >
+lib std
+
+fn main(){
+    std.print("Hello, World")
+}

@@ -1,0 +1,13 @@
+lib std
+lib format
+
+fn main(){
+    std.print(format("$0", fib(4)))
+}
+
+fn fib(var n : i64) = {
+    if n <= 1{
+        return 1
+    }
+    return fib(n - 1) + fib(n - 2)
+}

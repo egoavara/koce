@@ -1,0 +1,22 @@
+library std
+library format
+
+interface Person{
+    var Age : i32
+    var Height : f32
+    fn AskName() : str
+    fn AskNameAndAge() : str = {
+        return format("I'm $0, $1 years old", .AskName(), .Age)
+    }
+}
+
+v Foo{
+    implement Person{
+        @Person.Age = @Foo.Age
+        .AskName = fn () : str{
+            return .Name
+        }
+    }
+}
+fn main(){
+}
