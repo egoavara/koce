@@ -73,7 +73,7 @@ pub enum Expr {
 }
 
 
-use word::{LocalVariable, Variable, Type, Word};
+use super::word::{LocalVariable, Variable, Type, Word};
 use nom::types::CompleteStr;
 use nom::{multispace0, multispace1};
 use nom::{InputTakeAtPosition, IResult, AsChar, ErrorKind};

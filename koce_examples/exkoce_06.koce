@@ -1,0 +1,15 @@
+// < generic >
+library std
+library op
+
+fn pow2<T:op.mul>(n : T) : T{
+    return n * n
+}
+
+struct Node<T>{
+    var next : Node<T>
+    var data : T
+}
+
+fn main(){
+}

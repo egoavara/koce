@@ -13,8 +13,8 @@ struct Foo{
             .Name = Name
         }
     }
-    fn Aging(const diff : i32 ) = {
-        .Age += diff
+    fn Aging(self, const diff : i32 ) = {
+        self.Age += diff
     }
     impl format.Formater = {
         fn ToFormat() : str = {

@@ -1,0 +1,3 @@
+pub interface Sized{
+    pub const size : usize
+}

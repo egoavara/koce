@@ -1,0 +1,9 @@
+lib op = core.op
+pub define f32 : {
+    pub impl op.Add<f32, f32> : fn Add(self, y : f32) -> f32
+    pub impl op.Sub<f32, f32> : fn Sub(self, y : f32) -> f32
+    pub impl op.Mul<f32, f32> : fn Mul(self, y : f32) -> f32
+    pub impl op.Div<f32, f32> : fn Div(self, y : f32) -> f32
+    pub impl op.Exp<f32, f32> : fn Exp(self, y : f32) -> f32
+    pub impl op.FloorDiv<f32, f32> : fn FloorDiv(self, y : f32) -> f32
+}

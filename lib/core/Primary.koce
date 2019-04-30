@@ -1,0 +1,4 @@
+
+pub interface Primary{
+    pub impl Fixed
+}

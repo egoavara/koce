@@ -6,9 +6,11 @@ authors = ["iamGreedy <egoavara@gmail.com>"]
 [dependencies]
 regex = "1"
 lazy_static = "*"
-nom = "^4.1"
 custom_derive = "^0.1.7"
 enum_derive = "^0.1.7"
 hex = "^0.3.2"
-llvm-sys = "70"
 num = "*"
+
+[dependencies.nom]
+version = "^4.2"
+features = ["regexp", "regexp_macros"]

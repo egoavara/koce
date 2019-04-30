@@ -1,0 +1,24 @@
+pub interface Add<RHT, RES>{
+    fn Add(self, y : RHT) -> RES
+}
+pub interface Sub<RHT, RES>{
+    fn Sub(self, y : RHT) -> RES
+}
+pub interface Mul<RHT, RES>{
+    fn Mul(self, y : RHT) -> RES
+}
+pub interface Div<RHT, RES>{
+    fn Div(self, y : RHT) -> RES
+}
+pub interface Mod<RHT, RES>{
+    fn Mod(self, y : RHT) -> RES
+}
+pub interface Mod<RHT, RES>{
+    fn Mod(self, y : RHT) -> RES
+}
+pub interface Exp<RHT, RES>{
+    fn Exp(self, y : RHT) -> RES
+}
+pub interface FloorDiv<RHT, RES>{
+    fn FloorDiv(self, y : RHT) -> RES
+}

@@ -1,26 +1,39 @@
 pub mod parse;
 pub mod display;
 pub mod errors;
+pub mod utils;
 
 use std::string::String;
 use num::bigint::BigUint;
+use nom::types::CompleteStr;
 
 #[derive(Debug)]
 pub enum Sentence {
-    Constant { name: Expression, datatype: Option<Expression>, assignment: Option<Expression> },
-    Variable { name: Expression, datatype: Option<Expression>, assignment: Option<Expression> },
-    Library { name: Expression, alias: Expression },
-    Interface { name: Expression, definitions: Expression },
-    Struct { name: Expression, definitions: Expression },
-    Function { name: Expression, definitions: Expression },
-    Implements { name: Expression, definitions: Expression },
-    Define { name: Expression, definitions: Expression },
-    //
-    Assign { dst: Expression, src: Expression },
+    // <name/namepath>, path
+    Library(Expression, Option<Expression>),
+    // to, external defines
+    Define(Expression, Option<Expression>),
+    // accessor, nickname, realname
+    Alias(Accessor, Expression, Expression),
+    // accessor, name, definition, form
+    Module(Accessor, Expression, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    // accessor, name, definition, form
+    Constant(Accessor, Expression, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    // accessor, name, definition, form
+    Variable(Accessor, Expression, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    // accessor, name, definition, form
+    Layer(Accessor, Option<Expression>, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    // accessor, name, definition, form
+    Struct(Accessor, Option<Expression>, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    // accessor, name, definition(argument, return), form
+    Function(Accessor, Option<Expression>, (Expression, Expression), Option<Box<Sentence>>),
+    // <dst> = <src>, <dst> <op>= <src>
+    Assign(Expression, Expression),
+    // <expression>
     Mean(Expression),
-    If { condition: Expression, case: Box<Sentence>, none_case: Option<Box<Sentence>> },
-    ElseIf { condition: Expression, case: Box<Sentence>, none_case: Option<Box<Sentence>> },
-    Else(Box<Sentence>),
+    // if <condition> <do> else <else>
+    If(Expression, Box<Sentence>, Option<Box<Sentence>>),
+    // return
     Return(Expression),
     Match(Expression, Box<Sentence>),
     Defer(Expression, Box<Sentence>),
@@ -31,18 +44,18 @@ pub enum Sentence {
 #[derive(Debug)]
 pub enum Expression {
     Argument(Value),
-    // control
-    Call(Box<Expression>, Box<Expression>),
-    // control
-    Cast(Box<Expression>, Box<Expression>),
-    // control
-    Reference(Box<Expression>),
-    // control
-    Dereference(Box<Expression>),
-    // control
+    // '('
+    Tuple(Vec<Expression>),
+    // '['
+    Array(Vec<Expression>),
+    // '<', 예외적으로 제네릭 형 안의 익스프레션은 논리레벨 이상의 표현식이 올 수 없다
+    Generic(Vec<Expression>),
+    // control = <address>(<args...>)
+    Call(Box<Expression>, Vec<Expression>),
+    // control = <src>.<dst>
     Member(Box<Expression>, Box<Expression>),
-    // control
-    Wrap(Box<Expression>),
+    // control = <from>@<to>
+    Cast(Box<Expression>, Box<Expression>),
     // arithmetic, unary = + <Expression>
     Pos(Box<Expression>),
     // arithmetic, unary = - <Expression>
@@ -59,8 +72,6 @@ pub enum Expression {
     Mod(Box<Expression>, Box<Expression>),
     // arithmetic, binary = <Expression> ** <Expression>
     Exp(Box<Expression>, Box<Expression>),
-    // arithmetic, binary = <Expression> // <Expression>
-    Floor(Box<Expression>, Box<Expression>),
 
     // logical, unary = ! <Expression>
     Not(Box<Expression>),
@@ -94,9 +105,15 @@ pub enum Expression {
 pub enum Value {
     Name(String),
     Literal(String),
-    Exponential(String),
-    Binary(Vec<u8>),
+    Bytes(Vec<u8>),
     Numeric(BigUint),
-    Hexadecimal(Vec<u8>),
 }
 
+
+#[derive(Debug)]
+pub enum Accessor {
+    Public,
+    Exclusive,
+    Package,
+    Private,
+}

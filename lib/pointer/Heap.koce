@@ -1,0 +1,9 @@
+lib op = core.op
+
+pub struct Heap<T:Fixed>{
+    pub const raw : T
+    pub fn new(memsize : usize) : Heap<T:Fixed>
+    pub fn reallocate(self, memsize : usize)
+    pub fn offset(self, offset : usize) -> T
+    pub fn close(self)
+}

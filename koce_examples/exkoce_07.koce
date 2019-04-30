@@ -1,0 +1,12 @@
+// < heap >
+// < pointer >
+// < macro >
+
+fn main(){
+    var a : Heap<i32> = Heap<i32>.new(10);
+    later a.close()
+    a.raw += 1
+    var a : i32 = 20;
+    var ptr_a : Reference<i32> = Reference<i32>.new(a)
+    a.raw += 1
+}

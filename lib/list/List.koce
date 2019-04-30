@@ -1,0 +1,15 @@
+lib core
+lib pointer
+
+
+/*
+pub struct ArrayList<T : core.Fixed>{
+    pub const size : usize
+    pri var rawData : pointer.Heap<T>
+}
+
+define ArrayList<T : core.Fixed> {
+    pub impl IndexGet<T> = fn Get(self, index : usize) -> T = return self.rawData.offset(index)
+    pub impl IndexSet<T> = fn Set(self, index : usize, data : T) = self.rawData.offset(index) = data
+}
+*/
