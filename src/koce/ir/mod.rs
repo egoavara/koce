@@ -1,28 +1,12 @@
 use koce::ast::{Accessor};
 
-pub enum IR{
-    Symbol(Accessor, String),
-    // symbol, type,
-    Define(Accessor, DefineType, Option<String>,  Form),
-    Allocation,
-    Comment,
-}
+mod table;
 
-pub enum DefineType{
-    Struct(),
-    // arguments, return
-    Function(Vec<DefineItem>, TypeItem),
-    Interface,
-    Constant(TypeItem),
-    Variable(TypeItem),
+pub enum SymbolType{
+    Struct,
+    Function,
+    Layer,
+    Constant,
+    Variable,
     Library,
-}
-pub struct Form{
-
-}
-pub struct DefineItem{
-
-}
-pub struct TypeItem{
-
 }

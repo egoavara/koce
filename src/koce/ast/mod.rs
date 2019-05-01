@@ -9,39 +9,42 @@ use nom::types::CompleteStr;
 
 #[derive(Debug)]
 pub enum Sentence {
-    // <name/namepath>, path
-    Library(Expression, Option<Expression>),
     // to, external defines
     Define(Expression, Option<Expression>),
     // accessor, nickname, realname
     Alias(Accessor, Expression, Expression),
     // accessor, name, definition, form
-    Module(Accessor, Expression, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    Library(Accessor, Expression, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
-    Constant(Accessor, Expression, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    Constant(Accessor, Expression, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
-    Variable(Accessor, Expression, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    Variable(Accessor, Expression, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
-    Layer(Accessor, Option<Expression>, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    Layer(Accessor, Option<Expression>, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
-    Struct(Accessor, Option<Expression>, Option<Box<Sentence>>, Option<Box<Sentence>>),
+    Struct(Accessor, Option<Expression>, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // accessor, name, definition(argument, return), form
-    Function(Accessor, Option<Expression>, (Expression, Expression), Option<Box<Sentence>>),
+    Function(Accessor, Option<Expression>, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // <dst> = <src>, <dst> <op>= <src>
     Assign(Expression, Expression),
     // <expression>
     Mean(Expression),
-    // if <condition> <do> else <else>
-    If(Expression, Box<Sentence>, Option<Box<Sentence>>),
+    // <ft:FunctionType> <form>
+    Lambda(Box<Sentence>, Box<Sentence>),
+    // if <condition> <ok> else <not>
+    If(Expression, Box<Sentence>, Box<Option<Sentence>>),
+    // <args> -> <return>
+    FunctionShape(Vec<(Expression, Option<Expression>)>, Option<Expression>),
     // return
     Return(Expression),
-    Match(Expression, Box<Sentence>),
-    Defer(Expression, Box<Sentence>),
+//    Match(Expression, Box<Sentence>),
+    After(Expression),
+//    Before(Expression),
     //
     Block(Vec<Sentence>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Argument(Value),
     // '('
@@ -101,7 +104,7 @@ pub enum Expression {
     ShR(Box<Expression>, Box<Expression>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Name(String),
     Literal(String),

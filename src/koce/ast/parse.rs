@@ -11,7 +11,7 @@
 use super::{Value, Expression, Accessor, Sentence};
 use nom::types::CompleteStr;
 use nom::{IResult, ErrorKind, InputTakeAtPosition, AsChar};
-use nom::{alpha1, alphanumeric0, alphanumeric1, digit1, hex_digit1};
+use nom::{alpha1, alphanumeric0, alphanumeric1, digit1, hex_digit1, multispace1, multispace0};
 use num::{BigUint, Num};
 named!(pub parse_value<CompleteStr, Value>,
     alt!(
@@ -77,7 +77,7 @@ named!(parse_value_bytes_hexadecimal<CompleteStr, Value>,
 
 named!(pub parse_expr<CompleteStr, Expression>, call!(parse_expr_binary));
 
-named!(parse_expr_value<CompleteStr, Expression>,
+named!(pub parse_expr_value<CompleteStr, Expression>,
     alt!(
         parse_expr_generic
         | parse_expr_tuple
@@ -117,7 +117,7 @@ named!(pub parse_expr_generic<CompleteStr, Expression>,
 
 
 named!(pub parse_expr_binary<CompleteStr, Expression>, call!(parse_expr_binary_9));
-named!(parse_expr_binary_0<CompleteStr, Expression>,
+named!(pub parse_expr_binary_0<CompleteStr, Expression>,
     do_parse!(
         a : parse_expr_value >>
         v_op_b : many0!(pair!(ws!(alt!(tag!(".") | tag!("@"))), parse_expr_value )) >>
@@ -149,7 +149,8 @@ named!(pub parse_expr_call<CompleteStr, Expression>,
 named!(pub parse_expr_unary<CompleteStr, Expression>,
     do_parse!(
         op : opt!(alt!(tag!("+") | tag!("-") | tag!("!"))) >>
-        v : ws!(parse_expr_call) >>
+        multispace0 >>
+        v : parse_expr_call >>
         (
             match op{
                 Some(some) => match some.0{
@@ -228,7 +229,7 @@ named!(pub parse_expr_binary_4<CompleteStr, Expression>,
         }))
     )
 );
-named!(parse_expr_binary_5<CompleteStr, Expression>,
+named!(pub parse_expr_binary_5<CompleteStr, Expression>,
     do_parse!(
         a : parse_expr_binary_4 >>
         v_op_b : many0!(pair!(ws!(alt!(
@@ -311,19 +312,227 @@ named!(parse_expr_binary_9<CompleteStr, Expression>,
 named!(pub parse_accessor<CompleteStr, Accessor>,
     alt!(
         map!(tag!("pub"), |_|Accessor::Public)
-        | map!(tag!("pkg"), |_|Accessor::Package)
         | map!(tag!("exc"), |_|Accessor::Exclusive)
+        | map!(tag!("pkg"), |_|Accessor::Package)
         | map!(tag!("pri"), |_|Accessor::Private)
     )
 );
 
+named!(pub parse_sentence<CompleteStr, Sentence>,
+    alt!(
+        parse_sentence_constant
+        | parse_sentence_variable
+        | parse_sentence_library
+        | parse_sentence_layer
+        | parse_sentence_struct
+        | parse_sentence_function
+        //
+        | parse_sentence_lambda // must before parse_sentence_function_shape
+        | parse_sentence_function_shape
+        | parse_sentence_block
+        | parse_sentence_assign
+        | parse_sentence_return
+        | parse_sentence_after
+        | parse_sentence_if
+        | parse_sentence_mean
+    )
+);
 
-//named!(pub parse_sentence_constant<CompleteStr, Sentence>,
+named!(pub parse_sentence_constant<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("const")) >>
+        name : ws!(parse_expr) >>
+        definition : opt!(preceded!(ws!(tag!(":")), parse_sentence)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Constant(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
+    )
+);
+
+named!(pub parse_sentence_variable<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("var")) >>
+        name : ws!(parse_expr) >>
+        definition : opt!(preceded!(ws!(tag!(":")), parse_sentence)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Variable(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
+    )
+);
+
+named!(pub parse_sentence_library<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("lib")) >>
+        name : ws!(parse_expr) >>
+        definition : opt!(preceded!(ws!(tag!(":")), parse_sentence)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Library(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
+    )
+);
+
+named!(pub parse_sentence_layer<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("layer")) >>
+        name : opt!(ws!(parse_expr)) >>
+        definition : opt!(preceded!(ws!(tag!(":")), parse_sentence)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Layer(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
+    )
+);
+
+named!(pub parse_sentence_struct<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("struct")) >>
+        name : opt!(ws!(parse_expr)) >>
+        definition : opt!(preceded!(ws!(tag!(":")), parse_sentence)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Struct(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
+    )
+);
+
+named!(pub parse_sentence_function<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("fn")) >>
+        name : opt!(ws!(parse_expr)) >>
+        definition : opt!(preceded!(ws!(tag!(":")), parse_sentence)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Function(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
+    )
+);
+
+named!(pub parse_sentence_block<CompleteStr, Sentence>,
+    map!(
+        delimited!(char!('{'), separated_list!(alt!(
+            char!('\n')
+            | char!(';')
+        ), ws!(parse_sentence)), char!('}')),
+        |x|Sentence::Block(x)
+    )
+);
+
+
+named!(pub parse_sentence_assign<CompleteStr, Sentence>,
+    alt!(
+        parse_sentence_direct_assign
+        | parse_sentence_op_assign
+    )
+);
+
+named!(parse_sentence_direct_assign<CompleteStr, Sentence>,
+    do_parse!(
+        dst : parse_expr >>
+        ws!(tag!("=")) >>
+        src : parse_expr >>
+        (Sentence::Assign(dst, src))
+    )
+);
+
+named!(parse_sentence_op_assign<CompleteStr, Sentence>,
+    do_parse!(
+        dst : parse_expr >>
+        op : terminated!(alt!(
+            tag!("+")
+            | tag!("-")
+            | tag!("*")
+            | tag!("/")
+            | tag!("%")
+            | tag!("**")
+            | tag!("&")
+            | tag!("|")
+            | tag!("^")
+            | tag!("<<")
+            | tag!(">>")
+        ), tag!("=")) >>
+        src : parse_expr >>
+        (match op.0{
+            "+" => Sentence::Assign(dst.clone(), Expression::Add(Box::new(dst), Box::new(src))),
+            "-" => Sentence::Assign(dst.clone(), Expression::Sub(Box::new(dst), Box::new(src))),
+            "*" => Sentence::Assign(dst.clone(), Expression::Mul(Box::new(dst), Box::new(src))),
+            "/" => Sentence::Assign(dst.clone(), Expression::Div(Box::new(dst), Box::new(src))),
+            "%" => Sentence::Assign(dst.clone(), Expression::Mod(Box::new(dst), Box::new(src))),
+            "**" => Sentence::Assign(dst.clone(), Expression::Exp(Box::new(dst), Box::new(src))),
+            "&" => Sentence::Assign(dst.clone(), Expression::And(Box::new(dst), Box::new(src))),
+            "|" => Sentence::Assign(dst.clone(), Expression::Or(Box::new(dst), Box::new(src))),
+            "^" => Sentence::Assign(dst.clone(), Expression::Xor(Box::new(dst), Box::new(src))),
+            "<<" => Sentence::Assign(dst.clone(), Expression::ShL(Box::new(dst), Box::new(src))),
+            ">>" => Sentence::Assign(dst.clone(), Expression::ShR(Box::new(dst), Box::new(src))),
+            _ => unreachable!()
+        })
+    )
+);
+
+//named!(pub parse_sentence_after<CompleteStr, Sentence>,
 //    do_parse!(
-//        tag!("const") >>
-//        name : ws!(parse_expr) >>
-//        definition : opt!(preceded!(ws!(tag!(":")), parse_expr)) >>
-//        assign : opt!(preceded!(ws!(tag!("=")), parse_expr)) >>
-//        (Sentence::Constant(name, definition, assign))
+//        tag!("before") >>
+//        multispace1 >>
+//        expr : parse_expr >>
+//        (Sentence::Return(expr))
 //    )
 //);
+
+named!(pub parse_sentence_after<CompleteStr, Sentence>,
+    do_parse!(
+        tag!("after") >>
+        multispace1 >>
+        expr : parse_expr >>
+        (Sentence::After(expr))
+    )
+);
+
+named!(pub parse_sentence_return<CompleteStr, Sentence>,
+    do_parse!(
+        tag!("return") >>
+        multispace1 >>
+        expr : parse_expr >>
+        (Sentence::Return(expr))
+    )
+);
+
+named!(pub parse_sentence_mean<CompleteStr, Sentence>,
+    do_parse!(
+        expr : parse_expr  >>
+        (Sentence::Mean(expr))
+    )
+);
+
+named!(pub parse_sentence_function_shape<CompleteStr, Sentence>,
+    do_parse!(
+        args : parse_function_arguments  >>
+        ws!(tag!("->")) >>
+        rets : opt!(parse_expr)  >>
+        (Sentence::FunctionShape(args, rets))
+    )
+);
+
+named!(parse_function_arguments<CompleteStr, Vec<(Expression, Option<Expression>)>>,
+    delimited!(char!('('), separated_list!(tag!(","), ws!(parse_function_argument_each)), char!(')'))
+);
+named!(parse_function_argument_each<CompleteStr, (Expression, Option<Expression>)>,
+    pair!(parse_expr , opt!(preceded!(ws!(tag!(":")), parse_expr)))
+);
+
+
+named!(pub parse_sentence_lambda<CompleteStr, Sentence>,
+    do_parse!(
+        shape : parse_sentence_function_shape  >>
+        form : parse_sentence  >>
+        (Sentence::Lambda(Box::new(shape), Box::new(form)))
+    )
+);
+
+named!(pub parse_sentence_if<CompleteStr, Sentence>,
+    do_parse!(
+        tag!("if") >>
+        multispace1 >>
+        condition : parse_expr>>
+        multispace1 >>
+        ok : parse_sentence  >>
+        not : opt!(preceded!(ws!(tag!("else")), parse_sentence))  >>
+        (Sentence::If(condition, Box::new(ok), Box::new(not)))
+    )
+);
+
