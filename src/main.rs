@@ -4,38 +4,21 @@
 extern crate num;
 extern crate hex;
 extern crate core;
+extern crate petgraph;
 //extern crate llvm_sys as llvm;
 
 use nom::types::CompleteStr;
+use std::cell::RefCell;
+use std::rc::Rc;
 
-mod expr;
 mod koce;
+use koce::ir::{Path, Symbol, Implementation, Definition};
 
 fn main() {
-    let a = "ab ";
-    println!("{:?}", koce::ast::parse::parse_expr_unary(CompleteStr(a)));
-//    let t = "( 1, \"hello\" )";
-//    println!("{:?}", koce::ast::parse::parse_expr(CompleteStr(t)));
-//    let a = "[ 1, \"hello\" ]";
-//    println!("{:?}", koce::ast::parse::parse_expr(CompleteStr(a)));
-//    let ta = "( ( 1, 2, 3, 4), \"hello\")";
-//    println!("{:?}", koce::ast::parse::parse_expr(CompleteStr(ta)));
-//    let ta = "-fib@<T + Reader - Writer>()";
-//    println!("{:?}", koce::ast::parse::parse_expr(CompleteStr(ta)));
-//    let m = "1 + -2 * -3 ** -math.fib(1 << 2)";
-//    println!("{:?}", koce::ast::parse::parse_expr(CompleteStr(m)));
-//    let acc = "pkg";
-//    println!("{:?}", koce::ast::parse::parse_accessor(CompleteStr(acc)));
-//    let s_const = "(a : int, b) -> math.Real";
-//    println!("{:?}", koce::ast::parse::parse_sentence(CompleteStr(s_const)));
-    let s_const = "fn f64mul : (a : f64, b: f64) -> f64 = {a += b; return a * b}";
-    println!("{:?}", koce::ast::parse::parse_sentence(CompleteStr(s_const)));
-    let s_1 = "(a, b)->{a += b; return a * b}";
-    println!("{:?}", koce::ast::parse::parse_sentence(CompleteStr(s_1)));
-    let s_2 = "{if a > b { return a } else if a== b return (a + b) / 2 else return b}";
-    println!("{:?}", koce::ast::parse::parse_sentence(CompleteStr(s_2)));
-
-
+    let a = Path::Root.extends(vec!["a", "b"]);
+    println!("{}", a);
+    let b = Symbol::new("Foo", None, None);
+    println!("{:?}", b);
 
 }
 
