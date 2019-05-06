@@ -12,14 +12,28 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 mod koce;
-use koce::ir::{Path, Symbol, Implementation, Definition};
+
+use koce::ir::{Path, Symbol, Implementation, Definition, Table};
 
 fn main() {
-    let a = Path::Root.extends(vec!["a", "b"]);
-    println!("{}", a);
-    let b = Symbol::new("Foo", None, None);
-    println!("{:?}", b);
+//    let a = Path::Root.extends(vec!["a", "b"]);
+//    println!("{}", a);
+//    let b = Symbol::new("Foo", None, None);
+//    println!("{:?}", b);
+    let c = Table::root(Symbol::new("Foo", None, None));
+    println!("{}", c.borrow());
+    println!();
 
+    let d1 = Table::append(&c, Symbol::new("Foo2", None, None));
+    {
+        let d2 = Table::append(&c, Symbol::new("Foo3", None, None));
+        Table::append(&d2, Symbol::new("d2c", None, None));
+        println!("{}", c.borrow());
+        println!();
+        Table::remove(&d2);
+    }
+    println!("{}", c.borrow());
+    println!();
 }
 
 fn test_parse_value(){

@@ -1,7 +1,8 @@
 use koce::ast::{Accessor};
 
-pub mod table;
+mod table;
 mod path;
 mod symbol;
 pub use self::path::Path;
+pub use self::table::{Table, Permission};
 pub use self::symbol::{Symbol, Definition, Implementation};

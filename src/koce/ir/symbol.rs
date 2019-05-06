@@ -19,6 +19,8 @@ pub enum Implementation {
     Mapping(HashMap<Path, Vec<u8>>),
     Execution(Vec<Command>),
 }
+
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Command {
     Return(Path),
     Neg(Path, Path),
@@ -34,7 +36,7 @@ pub struct Symbol{
 
 impl Symbol {
     pub fn new(name : &str, def : Option<Definition>, imp : Option<Implementation>) -> Self{
-        Self{
+        Self {
             name : name.to_string(),
             definition : def,
             implementation : imp,
