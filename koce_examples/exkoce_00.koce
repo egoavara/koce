@@ -2,8 +2,8 @@
 // < expression >
 // < arithmetic >
 
-fn main(){
+fn main : ()-> = {
     var a : i32 = 1
-    var b : i32 = 2
+    var b = 2
     var c = a + b
 }

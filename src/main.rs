@@ -8,32 +8,23 @@ extern crate petgraph;
 //extern crate llvm_sys as llvm;
 
 use nom::types::CompleteStr;
-use std::cell::RefCell;
-use std::rc::Rc;
-
+use std::fs::File;
+use std::str;
 mod koce;
 
 use koce::ir::{Path, Symbol, Implementation, Definition, Table};
+use std::io::{Read, Cursor, BufReader};
+use nom::AsBytes;
 
 fn main() {
-//    let a = Path::Root.extends(vec!["a", "b"]);
-//    println!("{}", a);
-//    let b = Symbol::new("Foo", None, None);
-//    println!("{:?}", b);
-    let c = Table::root(Symbol::new("Foo", None, None));
-    println!("{}", c.borrow());
-    println!();
+    let mut f = File::open("./koce_examples/exkoce_00.koce").unwrap();
+    let mut v = Vec::new();
+    f.read_to_end(&mut v).unwrap();
+    let temp =  str::from_utf8(v.as_bytes()).unwrap();
+    let (left, stc) = koce::ast::parse::parse_sentence_multiple(CompleteStr(temp)).unwrap();
+    println!("Left : {}", left);
+    println!("Sentence : {:?}", stc);
 
-    let d1 = Table::append(&c, Symbol::new("Foo2", None, None));
-    {
-        let d2 = Table::append(&c, Symbol::new("Foo3", None, None));
-        Table::append(&d2, Symbol::new("d2c", None, None));
-        println!("{}", c.borrow());
-        println!();
-        Table::remove(&d2);
-    }
-    println!("{}", c.borrow());
-    println!();
 }
 
 fn test_parse_value(){

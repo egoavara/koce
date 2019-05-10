@@ -318,9 +318,14 @@ named!(pub parse_accessor<CompleteStr, Accessor>,
     )
 );
 
+
+named!(pub parse_sentence_multiple<CompleteStr, Vec<Sentence>>,
+    separated_list!(many1!(alt!(tag!("\r\n") | tag!("\n") | tag!(";"))), parse_sentence)
+);
 named!(pub parse_sentence<CompleteStr, Sentence>,
     alt!(
-        parse_sentence_constant
+        parse_sentence_comment
+        | parse_sentence_constant
         | parse_sentence_variable
         | parse_sentence_library
         | parse_sentence_layer
@@ -337,7 +342,14 @@ named!(pub parse_sentence<CompleteStr, Sentence>,
         | parse_sentence_mean
     )
 );
-
+named!(pub parse_sentence_comment<CompleteStr, Sentence>,
+    do_parse!(
+        tag!("//") >>
+        multispace0 >>
+        comment : alt!(take_until!("\r\n") | take_until!("\n")) >>
+        (Sentence::Comment(comment.to_string()))
+    )
+);
 named!(pub parse_sentence_constant<CompleteStr, Sentence>,
     do_parse!(
         accessor : opt!(parse_accessor) >>
@@ -406,10 +418,11 @@ named!(pub parse_sentence_function<CompleteStr, Sentence>,
 
 named!(pub parse_sentence_block<CompleteStr, Sentence>,
     map!(
-        delimited!(char!('{'), separated_list!(alt!(
-            char!('\n')
-            | char!(';')
-        ), ws!(parse_sentence)), char!('}')),
+        delimited!(
+            char!('{'),
+            separated_list!(many1!(alt!(tag!("\r\n") | tag!("\n") | tag!(";"))), preceded!(multispace0, parse_sentence)),
+            pair!(many0!(alt!(tag!("\r\n") | tag!("\n") | tag!(";"))), char!('}'))
+        ),
         |x|Sentence::Block(x)
     )
 );

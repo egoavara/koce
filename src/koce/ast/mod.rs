@@ -9,10 +9,7 @@ use nom::types::CompleteStr;
 
 #[derive(Debug)]
 pub enum Sentence {
-    // to, external defines
-    Define(Expression, Option<Expression>),
-    // accessor, nickname, realname
-    Alias(Accessor, Expression, Expression),
+    Define(Accessor, Expression, Expression),
     // accessor, name, definition, form
     Library(Accessor, Expression, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
@@ -25,6 +22,8 @@ pub enum Sentence {
     Struct(Accessor, Option<Expression>, Box<Option<Sentence>>, Box<Option<Sentence>>),
     // accessor, name, definition(argument, return), form
     Function(Accessor, Option<Expression>, Box<Option<Sentence>>, Box<Option<Sentence>>),
+    // //~
+    Comment(String),
     // <dst> = <src>, <dst> <op>= <src>
     Assign(Expression, Expression),
     // <expression>
