@@ -22,8 +22,17 @@ fn main() {
     f.read_to_end(&mut v).unwrap();
     let temp =  str::from_utf8(v.as_bytes()).unwrap();
     let (left, stc) = koce::ast::parse::parse_sentence_multiple(CompleteStr(temp)).unwrap();
-    println!("Left : {}", left);
-    println!("Sentence : {:?}", stc);
+    if left.0.len() == 0{
+        println!("No Left");
+    }else{
+        println!("Left : {}", left);
+    }
+    stc.iter().for_each(|x|{
+        println!("{:?}", x);
+        println!("{:?}", koce::ir::check_symbol(x));
+        println!("{:?}", koce::ir::check_definition(x));
+        println!();
+    })
 
 }
 

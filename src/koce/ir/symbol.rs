@@ -4,10 +4,11 @@ use std::collections::HashMap;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Definition {
-    Function,
+    Function(Vec<(String, Definition)>, Box<Definition>),
 
     Shape(Path),
 
+    Void,
     I8,
     I16,
     I32,
@@ -18,6 +19,9 @@ pub enum Definition {
     U64,
     F32,
     F64,
+    // TODO Tuple
+    // TODO Array
+
 }
 
 #[derive(Debug, PartialEq, Clone)]

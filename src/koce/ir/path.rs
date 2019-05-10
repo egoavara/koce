@@ -9,7 +9,6 @@ pub enum Path {
     Current,
     Next(Box<Path>, String),
     Specify(Box<Path>, String),
-    Temporary(Box<Path>, usize),
 }
 
 impl Path {
@@ -76,9 +75,6 @@ impl Path {
                 Path::Specify(p, v) => {
                     Path::Specify(Box::new(inner(dst, *p)), v)
                 }
-                Path::Temporary(p, v) => {
-                    Path::Temporary(Box::new(inner(dst, *p)), v)
-                }
             }
         }
         inner(self, d)
@@ -89,8 +85,17 @@ impl Path {
     pub fn specify(self, name: &str) -> Self {
         Path::Specify(Box::new(self), name.to_string())
     }
-    pub fn temporary(self, num: usize) -> Self {
-        Path::Temporary(Box::new(self), num)
+    pub fn is_direct_current_path(&self) -> Option<String>{
+        match self {
+            Path::Next(p, v) => {
+                if let Path::Current = AsRef::as_ref(p){
+                    Some(v.clone())
+                }else {
+                    None
+                }
+            },
+            _ => {None}
+        }
     }
 }
 
@@ -106,10 +111,6 @@ impl Display for Path {
             Path::Next(prev, path) => {
                 prev.fmt(f)?;
                 f.write_fmt(format_args!("/{}", path))
-            }
-            Path::Temporary(prev, temp) => {
-                prev.fmt(f)?;
-                f.write_fmt(format_args!("/${}", temp))
             }
             Path::Specify(prev, to) => {
                 prev.fmt(f)?;
