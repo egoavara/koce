@@ -1,0 +1,12 @@
+lib core.op
+
+pub define Ptr<T> = u64
+pub define Ptr<T> = {
+    pub macro deref : (self : Ptr<T>) -> T
+    pub macro ref : (raw : T) -> Ptr<T>
+}
+pub define Ptr<T> : op.Member = {
+    macro member <L : Ptr<T>, R, O> : (self : L, other : R) -> O {
+        T.R
+    }
+}

@@ -1,0 +1,4 @@
+pub layer InlineAdd = {
+    pub macro add
+}
+// pub layer Add = { pub fn add<R, O> : (self : Self, other : R) -> O }

@@ -1,8 +1,8 @@
 // < library >
 // < function call >
 // < function define >
-lib std
+lib std.cui
 
 fn main(){
-    std.print("Hello, World")
+    cui.print("Hello, World")
 }

@@ -1,7 +1,0 @@
-
-pub interface IndexGet<T>{
-    fn Get(self, index : usize) -> T
-}
-pub interface IndexSet<T>{
-    fn Set(self, index : usize, data : T)
-}

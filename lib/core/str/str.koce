@@ -1,0 +1,12 @@
+lib core.op
+lib core.ptr.Ptr
+
+pub struct str : {
+    var len : i32
+    var cap : i32
+    var ptr : Ptr<u8>
+}
+
+pub define str : op.Add = {
+    fn add <L : str, R : str, O : str> : (self : L, other : R) -> O
+}

@@ -1,9 +1,7 @@
 // < variable >
 // < expression >
 // < arithmetic >
-
 fn main = {
     var a : i32 = 1
-    var b = 2
-    var c = a + b
+    var b : i32 = 2
 }

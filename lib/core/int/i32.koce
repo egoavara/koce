@@ -1,0 +1,6 @@
+pub define i32 : core.op.Assign = {
+    pub macro assign = //i32-Assign
+}
+pub define i32 : core.op.Add = {
+    pub macro add = //i32-Add
+}

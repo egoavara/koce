@@ -1,7 +1,8 @@
 # Keywords
 - library
     - lib
-- interface
+- layer
+    - layer
 - struct
 - function
     - fn
@@ -9,15 +10,12 @@
     - var
 - constant
     - const
-- implement
-    - impl
 - define
     - def
-- is
-- in
-- and
-- or
-- use
+- after
 - return
-- match
-- defer
+- void
+- i8, i16, i32, i64
+- u8, u16, u32, u64
+- f32, f64
+- if, else 

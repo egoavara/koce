@@ -1,13 +1,11 @@
-lib std
-lib format
+lib std.cui
+lib core.ptr.Ptr
 
 fn main(){
-    std.print(format("$0", fib(4)))
-}
-
-fn fib(var n : i64) = {
-    if n <= 1{
-        return 1
+    var a : i32 = 1
+    var b : Ptr<i32> = $a
+    b += 1
+    if a.deref() == 2 {
+        cui.println("c is a's reference")
     }
-    return fib(n - 1) + fib(n - 2)
 }

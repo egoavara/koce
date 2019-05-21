@@ -1,5 +1,0 @@
-pub interface Fixed{
-    pub const size : usize
-    pub impl Sized = .size = .<Fixed>size
-}
-
