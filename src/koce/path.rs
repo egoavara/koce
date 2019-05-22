@@ -1,7 +1,6 @@
 use std::ops::Deref;
 use std::fmt::{Display, Formatter, Error};
 use koce::{Expression, Value};
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Path {
     Root,
@@ -9,12 +8,14 @@ pub enum Path {
     Child(Box<Path>, String),
     Temporary(Box<Path>, usize),
 }
+
+#[derive(Debug, Clone)]
 pub enum PathError{
     PathRuleViolation,
 }
 impl Path {
     pub fn from_expression(expr: &Expression) -> Result<Self, PathError> {
-        pub fn inner(expr: &Expression) -> Result<Path, ParserError> {
+        pub fn inner(expr: &Expression) -> Result<Path, PathError> {
             match expr {
                 Expression::Argument(Value::Name(name)) => {
                     Ok(Path::Child(Box::new(Path::Current), name.clone()))
@@ -26,7 +27,7 @@ impl Path {
                     //TODO
                     unimplemented!()
                 }
-                _ => Err(ParserError::PathRuleViolation)
+                _ => Err(PathError::PathRuleViolation)
             }
         }
         inner(expr)
@@ -110,5 +111,68 @@ impl Display for Path{
                 f.write_fmt(format_args!("{}/${}", *prev, value))
             },
         }
+    }
+}
+
+
+#[derive(Debug)]
+pub enum PathNode {
+    Current,
+    Parent,
+    Node(String),
+}
+#[derive(Debug)]
+pub struct PathFinder {
+    raw : Vec<PathNode>
+}
+
+impl PathFinder {
+    pub const fn new(raw: Vec<PathNode>) -> Self {
+        PathFinder { raw }
+    }
+
+    pub fn from_expression(expr: &Expression) -> Result<Self, PathError> {
+        match expr {
+            Expression::Argument(Value::Name(name)) => {
+                Ok(PathFinder::new(vec![PathNode::Node(name.clone())]))
+            }
+            Expression::Member(l, r) => {
+                Ok(Self::from_expression(l.deref())?.append(Self::from_expression(l.deref())?))
+            }
+            Expression::Cast(_, _) => {
+                //TODO
+                unimplemented!()
+            }
+            _ => Err(PathError::PathRuleViolation)
+        }
+    }
+    pub fn add(mut self, node : PathNode) -> Self{
+        self.raw.push(node);
+        self
+    }
+
+    pub fn add_all(mut self, nodes : Vec<PathNode>) -> Self{
+        self.raw.extend(nodes);
+        self
+    }
+
+    pub fn append(mut self, p : PathFinder) -> Self{
+        self.raw.extend(p.raw);
+        self
+    }
+}
+impl Display for PathFinder{
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        f.write_str(
+            self.raw.iter().map(|x|{
+                match *x {
+                    PathNode::Current => {"."},
+                    PathNode::Parent => {".."},
+                    PathNode::Node(t) => {t.as_str()},
+                }
+            }).fold(String::new(), |res, x|{
+                res + "/" + x
+            }).as_str().chars().skip(1).collect::<String>().as_str()
+        )
     }
 }

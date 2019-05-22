@@ -102,9 +102,15 @@ impl Expression {
                     }
                 }).collect())
             }
-            Expression::FunctionShape(args, ret) => {}
+            Expression::FunctionShape(args, ret) => {
+                // TODO
+                unimplemented!()
+            }
 
-            Expression::Call(_, _) => {}
+            Expression::Call(_, _) => {
+                // TODO
+                unimplemented!()
+            }
             Expression::Member(_, _) => {
                 Expression::Reference(Path::from_expression(&self).unwrap())
             }

@@ -12,6 +12,7 @@ hex = "^0.3.2"
 petgraph = "^0.4"
 num = "*"
 #llvm-sys = "80"
+xml5ever = "0.14.0"
 
 [dependencies.nom]
 version = "^4.2"

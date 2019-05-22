@@ -1,6 +1,6 @@
 //pub mod ast;
 //pub mod ir;
-pub mod strt;
+//pub mod strt;
 
 mod accessor;
 mod sentence;
@@ -9,6 +9,7 @@ mod value;
 mod primitive;
 mod path;
 mod symbol;
+mod parser;
 
 pub use self::accessor::*;
 pub use self::sentence::*;
@@ -17,3 +18,4 @@ pub use self::value::*;
 pub use self::primitive::*;
 pub use self::path::*;
 pub use self::symbol::*;
+pub use self::parser::*;

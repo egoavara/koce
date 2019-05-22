@@ -29,7 +29,7 @@ impl<T> TreeGraph<T> {
     }
     pub fn append<'a, 'b>(&'a mut self, data: T) -> &'b mut Self {
         unsafe {
-            let temp = Box::into_raw(Box::new(unsafe { Self::new_root(data) }));
+            let temp = Box::into_raw(Box::new(nsafe { Self::new_root(data) }));
             (*temp).ptr_parent = self;
             self.ptr_children.push(temp);
             &mut *temp
