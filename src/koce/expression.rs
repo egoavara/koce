@@ -10,7 +10,7 @@ use koce::{parse_value, Path, Raw, Value};
 #[derive(Debug, Clone)]
 pub enum Expression {
     // No Parser allow
-    Binary(Raw),
+    Primitive(Raw),
     Reference(Path),
     //
     Argument(Value),
@@ -77,7 +77,7 @@ pub enum Expression {
 impl Expression {
     pub fn make_path_priority(self) -> Self {
         match self {
-            Expression::Binary(_) => self,
+            Expression::Primitive(_) => self,
             Expression::Reference(_) => self,
             Expression::Argument(_) => self,
 

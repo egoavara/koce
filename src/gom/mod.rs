@@ -1,12 +1,15 @@
 use std::cell::Cell;
+use std::cell::Ref;
 use std::cell::RefCell;
-use std::fmt::Debug;
+use std::cell::RefMut;
+use std::fmt::{Debug, Display, Error, Formatter};
 use std::io::Cursor;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::rc::{Rc, Weak};
-use std::cell::Ref;
-use std::cell::RefMut;
+use gom::iterfn::IterRule;
+
+mod iterfn;
 
 #[derive(Debug)]
 pub struct GOM<T> {
@@ -30,9 +33,7 @@ impl<T> GOM<T> {
     pub fn explore(&self) -> Option<Explorer<T>> {
         match self.root {
             None => None,
-            Some(ref x) => Some(Explorer {
-                curr: Rc::clone(x)
-            }),
+            Some(ref x) => Some(Explorer::new(Rc::clone(x))),
         }
     }
 }
@@ -54,10 +55,11 @@ pub struct Explorer<T> {
 
 impl<T> Explorer<T> {
     pub fn new(curr: Handle<T>) -> Self {
-        Explorer { curr }
+        Explorer {
+            curr,
+        }
     }
     pub fn parent(self) -> Result<Self, Self> {
-
         let a = self.curr.borrow().parent.upgrade();
         match a {
             None => Err(self),
@@ -127,48 +129,95 @@ impl<T> Explorer<T> {
     }
 
 
-    pub fn inside(&self) -> Ref<Node<T>>{
+    pub fn inside(&self) -> Ref<Node<T>> {
         self.curr.borrow()
     }
-//    pub fn inside_mut(&self) -> RefMut<Node<T>>{
-//        self.curr.borrow_mut()
-//    }
+    pub fn inside_mut(&self) -> RefMut<Node<T>> {
+        self.curr.borrow_mut()
+    }
+    pub fn depth(&self) -> usize {
+        Self::util_depth(&self.curr)
+    }
+    pub fn util_depth(h: &Handle<T>)-> usize {
+        match RefCell::borrow(h).parent.upgrade() {
+            None => 0,
+            Some(parent) => Self::util_depth(&parent) + 1,
+        }
+    }
 }
-//impl <T>DerefMut for Explorer<T>{
-//    fn deref_mut(&mut self) -> &mut Self::Target {
-//        &mut self.curr.borrow_mut().data
+impl <T> Clone for Explorer<T>{
+    fn clone(&self) -> Self {
+        Self{
+            curr : Rc::clone(&self.curr)
+        }
+    }
+}
+//impl<T> Iterator for Explorer<T> {
+//    type Item = Handle<T>;
+//    fn next(&mut self) -> Option<Self::Item> {
+//        match &self.root {
+//            None => {
+//                self.root = Some(Rc::clone(&self.curr));
+//                Some(Rc::clone(&self.curr))
+//            },
+//            Some(root) => {
+//                let curr = Explorer::new(Rc::clone(&self.curr));
+//                match curr.child(0) {
+//                    Ok(child) => {
+//                        self.curr = Rc::clone(&child.curr);
+//                        Some(child.curr)
+//                    }
+//                    Err(curr) => {
+//                        match curr.next_sibling() {
+//                            Ok(next_sib) => {
+//                                self.curr = Rc::clone(&next_sib.curr);
+//                                Some(next_sib.curr)
+//                            }
+//                            Err(curr) => {
+//                                match curr.parent() {
+//                                    Ok(parent) => {
+//                                        if Rc::ptr_eq(&parent.curr, root) {
+//                                            self.root = None;
+//                                            None
+//                                        } else {
+//                                            match parent.next_sibling() {
+//                                                Ok(parent_next_sib) => {
+//                                                    self.curr = Rc::clone(&parent_next_sib.curr);
+//                                                    Some(parent_next_sib.curr)
+//                                                }
+//                                                Err(_) => {
+//                                                    // Last Elem
+//                                                    self.root = None;
+//                                                    None
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    Err(_) => {
+//                                        self.root = None;
+//                                        None
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            },
+//        }
 //    }
 //}
-impl<T: Debug> Iterator for Explorer<T> {
-    type Item = Explorer<T>;
-    fn next(&mut self) -> Option<Self::Item> {
-        let ret = Explorer::new(Rc::clone(&self.curr));
-        let curr = Explorer::new(Rc::clone(&self.curr));
-        match curr.child(0) {
-            Ok(child) => {
-                self.curr = child.curr;
-                Some(ret)
+
+impl<T: Debug + Display> Display for Explorer<T> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        let root_depth = self.depth();
+        let mut a = Self::new(Rc::clone(&self.curr));
+        for elem in a.iter(IterRule::Walk) {
+            for _ in 0..Self::util_depth(&elem) - root_depth {
+                f.write_str("    ")?;
             }
-            Err(curr) => {
-                match curr.next_sibling() {
-                    Ok(next_sib) => {
-                        self.curr = next_sib.curr;
-                        Some(ret)
-                    }
-                    Err(curr) => {
-                        match curr.parent().unwrap().next_sibling() {
-                            Ok(parent_next_sib) => {
-                                self.curr = parent_next_sib.curr;
-                                Some(ret)
-                            }
-                            Err(_) => {
-                                // Last Elem
-                                None
-                            }
-                        }
-                    }
-                }
-            }
+            Display::fmt(&elem.borrow().data, f)?;
+            f.write_str("\n")?;
         }
+        Ok(())
     }
 }

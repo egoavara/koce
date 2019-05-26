@@ -116,7 +116,6 @@ impl KoceType {
                 //TODO
                 unimplemented!()
             },
-            _ => KoceRaw::Void,
         }
     }
 }

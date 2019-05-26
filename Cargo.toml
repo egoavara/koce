@@ -5,14 +5,14 @@ authors = ["iamGreedy <egoavara@gmail.com>"]
 
 [dependencies]
 regex = "1"
-lazy_static = "*"
 custom_derive = "^0.1.7"
 enum_derive = "^0.1.7"
 hex = "^0.3.2"
 petgraph = "^0.4"
 num = "*"
-#llvm-sys = "80"
+lazy_static = "1.3.0"
 xml5ever = "0.14.0"
+#llvm-sys = "80"
 
 [dependencies.nom]
 version = "^4.2"
