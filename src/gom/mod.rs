@@ -7,9 +7,11 @@ use std::io::Cursor;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::rc::{Rc, Weak};
-use gom::iterfn::IterRule;
 
 mod iterfn;
+pub use self::iterfn::*;
+use std::path::{Path, Component};
+use std::ffi::OsStr;
 
 #[derive(Debug)]
 pub struct GOM<T> {
@@ -53,10 +55,21 @@ pub struct Explorer<T> {
     curr: Handle<T>,
 }
 
+pub trait PathMatcher{
+    fn is_matched(&self, test : &OsStr)-> bool;
+}
+
 impl<T> Explorer<T> {
     pub fn new(curr: Handle<T>) -> Self {
         Explorer {
             curr,
+        }
+    }
+    pub fn root(self) -> Self {
+        let a = self.curr.borrow().parent.upgrade();
+        match a {
+            None => self,
+            Some(some) => Explorer::new(some).root(),
         }
     }
     pub fn parent(self) -> Result<Self, Self> {
@@ -117,7 +130,34 @@ impl<T> Explorer<T> {
     pub fn is_root(&self) -> bool {
         self.curr.borrow().parent.upgrade().is_none()
     }
-
+    pub fn follow_fn<P : AsRef<Path>, F : Fn(&T, &OsStr) -> bool>(self, p : P, matcher : F) -> Result<Self, Self>{
+        p.as_ref().components().fold(Ok(self), |x, comp|{
+            match comp {
+                Component::RootDir => {
+                    match x {
+                        Ok(ok) => {Ok(ok.root())},
+                        Err(err) => {Err(err)},
+                    }
+                },
+                Component::Prefix(_) => {x},
+                Component::CurDir => {x},
+                Component::ParentDir => {
+                    match x {
+                        Ok(ok) => {ok.parent()},
+                        Err(err) => {Err(err)},
+                    }
+                },
+                Component::Normal(name) => {
+                    match x {
+                        Ok(ok) => {
+                            ok.find_child(|x|matcher(x, name))
+                        },
+                        Err(err) => {Err(err)},
+                    }
+                },
+            }
+        })
+    }
     pub fn add_child(&self, t: T) -> Self {
         let res = Rc::new(RefCell::new(Node {
             parent: Rc::downgrade(&self.curr),
@@ -127,8 +167,6 @@ impl<T> Explorer<T> {
         self.curr.borrow_mut().children.push(Rc::clone(&res));
         Explorer::new(res)
     }
-
-
     pub fn inside(&self) -> Ref<Node<T>> {
         self.curr.borrow()
     }
@@ -143,6 +181,36 @@ impl<T> Explorer<T> {
             None => 0,
             Some(parent) => Self::util_depth(&parent) + 1,
         }
+    }
+}
+impl<T : PathMatcher> Explorer<T> {
+    pub fn follow<P : AsRef<Path>>(self, p : P) -> Result<Self, Self>{
+        p.as_ref().components().fold(Ok(self), |x, comp|{
+            match comp {
+                Component::RootDir => {
+                    match x {
+                        Ok(ok) => {Ok(ok.root())},
+                        Err(err) => {Err(err)},
+                    }
+                },
+                Component::Prefix(_) => {x},
+                Component::CurDir => {x},
+                Component::ParentDir => {
+                    match x {
+                        Ok(ok) => {ok.parent()},
+                        Err(err) => {Err(err)},
+                    }
+                },
+                Component::Normal(name) => {
+                    match x {
+                        Ok(ok) => {
+                            ok.find_child(|x|x.is_matched(name))
+                        },
+                        Err(err) => {Err(err)},
+                    }
+                },
+            }
+        })
     }
 }
 impl <T> Clone for Explorer<T>{

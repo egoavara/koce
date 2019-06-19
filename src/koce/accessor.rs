@@ -1,5 +1,5 @@
 use nom::types::CompleteStr;
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Accessor {
     Public,
     Package,

@@ -1,6 +1,7 @@
-pub define i32 : core.op.Assign = {
-    pub macro assign = //i32-Assign
-}
-pub define i32 : core.op.Add = {
-    pub macro add = //i32-Add
+pub def i32 = // llvm.i32
+
+pub def i32 : core.handle.Argument = {
+    fn argument : (raw : core.handle.Value) -> Self = {
+        return raw@(i32)
+    }
 }

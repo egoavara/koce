@@ -6,18 +6,24 @@ mod accessor;
 mod sentence;
 mod expression;
 mod value;
-mod primitive;
 mod path;
-mod symbol;
-mod parser;
-pub mod core;
+mod nparser;
+mod nparser_consume;
+mod cores;
 
 pub use self::accessor::*;
 pub use self::sentence::*;
 pub use self::expression::*;
 pub use self::value::*;
-pub use self::primitive::*;
 pub use self::path::*;
-pub use self::symbol::*;
-pub use self::parser::*;
-pub use self::core::*;
+pub use self::nparser::*;
+pub use self::nparser_consume::*;
+
+
+use std::io::Read;
+
+pub fn read_to_string<T : Read>(t : &mut T) -> Option<String>{
+    let mut temp : String = "".to_string();
+    t.read_to_string(&mut temp).ok()?;
+    Some(temp)
+}

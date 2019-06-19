@@ -1,8 +1,8 @@
 use koce::{Accessor, Expression, parse_expr, parse_accessor};
 use nom::types::CompleteStr;
-use nom::{multispace0, multispace1};
+use nom::{multispace0, multispace1, line_ending};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Sentence {
     Define(Accessor, Expression, Box<Option<Expression>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
@@ -12,11 +12,14 @@ pub enum Sentence {
     // accessor, name, definition, form
     Variable(Accessor, Expression, Box<Option<Expression>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
-    Layer(Accessor, Option<Expression>, Box<Option<Expression>>, Box<Option<Sentence>>),
+    Layer(Accessor, Expression, Box<Option<Expression>>, Box<Option<Sentence>>),
     // accessor, name, definition, form
-    Struct(Accessor, Option<Expression>, Box<Option<Expression>>, Box<Option<Sentence>>),
+    Struct(Accessor, Expression, Box<Option<Expression>>, Box<Option<Sentence>>),
+    Enum(Accessor, Expression, Box<Option<Expression>>, Box<Option<Sentence>>),
     // accessor, name, definition(argument, return), form
-    Function(Accessor, Option<Expression>, Box<Option<Expression>>, Box<Option<Sentence>>),
+    Function(Accessor, Expression, Box<Option<Expression>>, Box<Option<Sentence>>),
+    // accessor, name, form
+    Macro(Accessor, Option<Expression>, Box<Option<Sentence>>),
     // //~
     Comment(String),
     // <dst> = <src>, <dst> <op>= <src>
@@ -37,9 +40,12 @@ pub enum Sentence {
 }
 
 
-
 named!(pub parse_sentence_multiple<CompleteStr, Vec<Sentence>>,
-    separated_list!(many1!(alt!(tag!("\r\n") | tag!("\n") | tag!(";"))), parse_sentence)
+    do_parse!(
+        result : separated_list!(many1!(alt!(tag!("\r\n") | tag!("\n") | tag!(";"))), parse_sentence) >>
+        multispace0 >>
+        (result)
+    )
 );
 named!(pub parse_sentence<CompleteStr, Sentence>,
     alt!(
@@ -49,22 +55,28 @@ named!(pub parse_sentence<CompleteStr, Sentence>,
         | parse_sentence_library
         | parse_sentence_layer
         | parse_sentence_struct
+        | parse_sentence_enum
         | parse_sentence_function
-        //
-//        | parse_sentence_lambda // must before parse_sentence_function_shape
+        | parse_sentence_macro
+        | parse_sentence_define
         | parse_sentence_block
         | parse_sentence_return
         | parse_sentence_after
         | parse_sentence_if
-        | parse_sentence_mean // must before parse_sentence_assign
         | parse_sentence_assign
+        | parse_sentence_mean
     )
 );
+
+#[inline]
+pub fn is_not_space(chr: char) -> bool {
+    !(chr == '\r' || chr == '\n')
+}
+
 named!(pub parse_sentence_comment<CompleteStr, Sentence>,
     do_parse!(
         tag!("//") >>
-        multispace0 >>
-        comment : alt!(take_until!("\r\n") | take_until!("\n")) >>
+        comment : take_while!(is_not_space) >>
         (Sentence::Comment(comment.to_string()))
     )
 );
@@ -119,7 +131,7 @@ named!(pub parse_sentence_layer<CompleteStr, Sentence>,
     do_parse!(
         accessor : opt!(parse_accessor) >>
         ws!(tag!("layer")) >>
-        name : opt!(ws!(parse_expr)) >>
+        name : ws!(parse_expr) >>
         definition : opt!(preceded!(ws!(tag!(":")), parse_expr)) >>
         assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
         (Sentence::Layer(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
@@ -130,18 +142,39 @@ named!(pub parse_sentence_struct<CompleteStr, Sentence>,
     do_parse!(
         accessor : opt!(parse_accessor) >>
         ws!(tag!("struct")) >>
-        name : opt!(ws!(parse_expr)) >>
+        name : ws!(parse_expr) >>
         definition : opt!(preceded!(ws!(tag!(":")), parse_expr)) >>
         assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
         (Sentence::Struct(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
     )
 );
 
+named!(pub parse_sentence_enum<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("enum")) >>
+        name : ws!(parse_expr) >>
+        definition : opt!(preceded!(ws!(tag!(":")), parse_expr)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Enum(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
+    )
+);
+
+
+named!(pub parse_sentence_macro<CompleteStr, Sentence>,
+    do_parse!(
+        accessor : opt!(parse_accessor) >>
+        ws!(tag!("macro")) >>
+        name : opt!(ws!(parse_expr)) >>
+        assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
+        (Sentence::Macro(accessor.unwrap_or(Accessor::Private), name, Box::new(assign)))
+    )
+);
 named!(pub parse_sentence_function<CompleteStr, Sentence>,
     do_parse!(
         accessor : opt!(parse_accessor) >>
         ws!(tag!("fn")) >>
-        name : opt!(ws!(parse_expr)) >>
+        name : ws!(parse_expr) >>
         definition : opt!(preceded!(ws!(tag!(":")), parse_expr)) >>
         assign : opt!(preceded!(ws!(tag!("=")), parse_sentence)) >>
         (Sentence::Function(accessor.unwrap_or(Accessor::Private), name, Box::new(definition), Box::new(assign)))
@@ -153,7 +186,7 @@ named!(pub parse_sentence_block<CompleteStr, Sentence>,
         delimited!(
             char!('{'),
             separated_list!(many1!(alt!(tag!("\r\n") | tag!("\n") | tag!(";"))), preceded!(multispace0, parse_sentence)),
-            pair!(many0!(alt!(tag!("\r\n") | tag!("\n") | tag!(";"))), char!('}'))
+            pair!(many0!(alt!(tag!("\r\n") | tag!("\n") | tag!(";") | tag!(" "))), char!('}'))
         ),
         |x|Sentence::Block(x)
     )

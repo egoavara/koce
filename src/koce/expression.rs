@@ -5,13 +5,11 @@ use nom::{multispace0, multispace1};
 use nom::types::CompleteStr;
 use num::bigint::BigInt;
 
-use koce::{parse_value, Path, Raw, Value};
+use koce::{parse_value, Value};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
 pub enum Expression {
-    // No Parser allow
-    Primitive(Raw),
-    Reference(Path),
     //
     Argument(Value),
     // '('
@@ -19,7 +17,7 @@ pub enum Expression {
     // '['
     Array(Vec<Expression>),
     // <args> -> <return>
-    FunctionShape(Vec<(Expression, Option<Expression>)>, Box<Option<Expression>>),
+    FunctionShape(Vec<(Expression, Expression)>, Box<Option<Expression>>),
     // '<', 예외적으로 제네릭 형 안의 익스프레션은 논리레벨 이상의 표현식이 올 수 없다
     Generic(Vec<Expression>),
     // control = <address>(<args...>)
@@ -73,162 +71,6 @@ pub enum Expression {
     // bitwise, binary = <Expression> >> <Expression>
     ShR(Box<Expression>, Box<Expression>),
 }
-
-impl Expression {
-    pub fn make_path_priority(self) -> Self {
-        match self {
-            Expression::Primitive(_) => self,
-            Expression::Reference(_) => self,
-            Expression::Argument(_) => self,
-
-            Expression::Tuple(mut v) => {
-                if v.len() == 1{
-                    v.remove(0)
-                }else{
-                    Expression::Tuple(v.into_iter().map(|x| {
-                        match Path::from_expression(&x) {
-                            Ok(ok) => Expression::Reference(ok),
-                            Err(_) => x,
-                        }
-                    }).collect())
-                }
-            }
-            Expression::Generic(v) |
-            Expression::Array(v) => {
-                Expression::Tuple(v.into_iter().map(|x| {
-                    match Path::from_expression(&x) {
-                        Ok(ok) => Expression::Reference(ok),
-                        Err(_) => x,
-                    }
-                }).collect())
-            }
-            Expression::FunctionShape(args, ret) => {
-                // TODO
-                unimplemented!()
-            }
-
-            Expression::Call(_, _) => {
-                // TODO
-                unimplemented!()
-            }
-            Expression::Member(_, _) => {
-                Expression::Reference(Path::from_expression(&self).unwrap())
-            }
-
-            Expression::Pos(v) => {
-                Expression::Pos(Box::new(Path::from_expression(&v).map(|x| Expression::Reference(x)).unwrap_or(*v)))
-            }
-            Expression::Neg(v) => {
-                Expression::Neg(Box::new(Path::from_expression(&v).map(|x| Expression::Reference(x)).unwrap_or(*v)))
-            }
-            Expression::Cast(l, r) => {
-                Expression::Cast(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-
-            Expression::Add(l, r) => {
-                Expression::Add(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::Sub(l, r) => {
-                Expression::Sub(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::Mul(l, r) => {
-                Expression::Mul(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::Div(l, r) => {
-                Expression::Div(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::Mod(l, r) => {
-                Expression::Mod(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::Exp(l, r) => {
-                Expression::Exp(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::Not(v) => {
-                Expression::Not(Box::new(Path::from_expression(&v).map(|x| Expression::Reference(x)).unwrap_or(*v)))
-            }
-            Expression::Eq(l, r) => {
-                Expression::Eq(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::Neq(l, r) => {
-                Expression::Neq(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::G(l, r) => {
-                Expression::G(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )
-            }
-            Expression::L(l, r) => {
-                Expression::L(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-            Expression::Ge(l, r) => {
-                Expression::Ge(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-            Expression::Le(l, r) => {
-                Expression::Le(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-            Expression::And(l, r) => {
-                Expression::And(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-            Expression::Or(l, r) => {
-                Expression::Or(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-            Expression::Xor(l, r) => {
-                Expression::Xor(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-            Expression::ShL(l, r) => {
-                Expression::ShL(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-            Expression::ShR(l, r) => {
-                Expression::ShR(
-                    Box::new(Path::from_expression(&l).map(|x| Expression::Reference(x)).unwrap_or(*l)),
-                    Box::new(Path::from_expression(&r).map(|x| Expression::Reference(x)).unwrap_or(*r)),
-                )}
-        }
-    }
-}
-
 named!(pub parse_expr<CompleteStr, Expression>, call!(parse_expr_binary));
 
 named!(pub parse_expr_value<CompleteStr, Expression>,
@@ -287,7 +129,7 @@ named!(pub parse_expr_binary_0<CompleteStr, Expression>,
 );
 named!(pub parse_expr_call<CompleteStr, Expression>,
     map!(
-        pair!(parse_expr_binary_0, opt!(ws!(parse_expr_tuple))),
+        pair!(parse_expr_binary_0, opt!(parse_expr_tuple)),
         |(address, tuple)|match tuple{
             Some(args) => {
                 Expression::Call(
@@ -473,9 +315,9 @@ named!(pub parse_expr_function_shape<CompleteStr, Expression>,
     )
 );
 
-named!(parse_function_arguments<CompleteStr, Vec<(Expression, Option<Expression>)>>,
+named!(parse_function_arguments<CompleteStr, Vec<(Expression, Expression)>>,
     delimited!(char!('('), separated_list!(tag!(","), ws!(parse_function_argument_each)), char!(')'))
 );
-named!(parse_function_argument_each<CompleteStr, (Expression, Option<Expression>)>,
-    pair!(parse_expr , opt!(preceded!(ws!(tag!(":")), parse_expr)))
+named!(parse_function_argument_each<CompleteStr, (Expression, Expression)>,
+    pair!(parse_expr , preceded!(ws!(tag!(":")), parse_expr))
 );
